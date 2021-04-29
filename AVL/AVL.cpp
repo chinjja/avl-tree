@@ -48,13 +48,13 @@ private:
     avl_node* parent;
 
     static void set_left(avl_node* node, avl_node* child) {
-        assert(node != child);
+       // assert((node == nullptr && child == nullptr) || node != child);
         if (node) node->left = child;
         if (child) child->parent = node;
     }
 
     static void set_right(avl_node* node, avl_node* child) {
-        assert(node != child);
+       // assert((node == nullptr && child == nullptr) || node != child);
         if (node) node->right = child;
         if (child) child->parent = node;
     }
@@ -153,17 +153,19 @@ class avl_tree {
 public:
     typedef avl_node<Key, Value> node_type;
 
-    avl_tree() : root(nullptr) {}
+    avl_tree() : root(nullptr), size_(0) {}
 
     void add(const Key& key, const Value& value) {
         if (!root) {
             root = new node_type(nullptr, key, value);
+            size_++;
         }
         else {
             node_type* p;
             node_type* node = take(key, &p);
             if (!node) {
                 node = new node_type(p, key);
+                size_++;
             }
             node->value = value;
             root = valance(node);
@@ -263,16 +265,22 @@ public:
             else {
                 node->parent->set_right(nullptr);
             }
+            valance(node->parent);
         }
         else if (node->left) {
-            node_type* prev = reverse_upper_bound(key);
-
+            node_type* near = reverse_upper_bound(key);
+            node_type* vnode = near->parent;
+            near->set_left(node->left);
+            near->set_right(node->right);
+            valance(vnode);
         }
         else {
-            node_type* next = upper_bound(key);
-
+            node_type* near = upper_bound(key);
+            node_type* vnode = near->parent;
+            near->set_left(node->left);
+            near->set_right(node->right);
+            valance(vnode);
         }
-        valance(node->parent);
         delete node;
         return true;
     }
@@ -283,6 +291,10 @@ public:
 
     int height() {
         return root ? root->height + 1 : 0;
+    }
+
+    size_t size() const {
+        return size_;
     }
 
 private:
@@ -334,9 +346,9 @@ private:
         }
         return node;
     }
-
 private:
     node_type* root;
+    size_t size_;
 };
 
 class avl_testcase {
@@ -515,27 +527,38 @@ int main()
 
     avl_tree<int, std::string> tree;
     assert(tree.height() == 0);
+    assert(tree.size() == 0);
     tree.add(100, "A");
     assert(tree.height() == 1);
+    assert(tree.size() == 1);
     tree.add(90, "B");
     assert(tree.height() == 2);
+    assert(tree.size() == 2);
     tree.add(80, "C");
     assert(tree.height() == 2);
+    assert(tree.size() == 3);
     tree.add(70, "D");
     assert(tree.height() == 3);
+    assert(tree.size() == 4);
     tree.add(60, "E");
     assert(tree.height() == 3);
+    assert(tree.size() == 5);
     tree.add(50, "FF");
     tree.add(50, "F");
     assert(tree.height() == 3);
+    assert(tree.size() == 6);
     tree.add(40, "G");
     assert(tree.height() == 3);
+    assert(tree.size() == 7);
     tree.add(30, "H");
     assert(tree.height() == 4);
+    assert(tree.size() == 8);
     tree.add(20, "I");
     assert(tree.height() == 4);
+    assert(tree.size() == 9);
     tree.add(10, "J");
     assert(tree.height() == 4);
+    assert(tree.size() == 10);
 
     assert(tree[50] == "F");
     assert(tree.containsKey(50) == true);
@@ -609,5 +632,4 @@ int main()
     assert(tree.lower_bound(91)->key == 100);
     assert(tree.lower_bound(100)->key == 100);
     assert(tree.lower_bound(101) == nullptr);
-
 }
