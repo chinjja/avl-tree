@@ -37,7 +37,7 @@ public:
     Key key;
     Value value;
 
-    bool leaf() const {
+    bool is_leaf() const {
         return !left && !right;
     }
 
@@ -258,7 +258,7 @@ public:
         if (!node) {
             return false;
         }
-        if (node->leaf()) {
+        if (node->is_leaf()) {
             if (node->parent->left == node) {
                 node->parent->set_left(nullptr);
             }
