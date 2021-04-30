@@ -13,7 +13,7 @@ class avl_node {
 public:
     avl_node(avl_node* parent, Key key, Value value = Value())
         :
-        key(key),
+        key_(key),
         value(value),
         height(0),
         left(nullptr),
@@ -21,7 +21,7 @@ public:
         parent(parent)
     {
         if (parent) {
-            if (parent->key > key) {
+            if (parent->key_ > key) {
                 parent->left = this;
             }
             else {
@@ -34,7 +34,9 @@ public:
     {
 
     }
-    Key key;
+    const Key& key() const {
+        return key_;
+    }
     Value value;
 
     bool is_leaf() const {
@@ -42,6 +44,7 @@ public:
     }
 
 private:
+    Key key_;
     int height;
     avl_node* left;
     avl_node* right;
@@ -131,11 +134,11 @@ private:
         c->upd();
     }
 
-    int lh() {
+    int lh() const {
         return left ? left->height : -1;
     }
 
-    int rh() {
+    int rh() const {
         return right ? right->height : -1;
     }
 
@@ -172,28 +175,34 @@ public:
         }
     }
 
-    Value get(const Key& key) {
+    const Value& at(const Key& key) const {
         node_type* node = take(key);
         if (node) return node->value;
         throw std::exception("not found: ");
     }
 
-    bool containsKey(const Key& key) {
+    Value& at(const Key& key) {
+        node_type* node = take(key);
+        if (node) return node->value;
+        throw std::exception("not found: ");
+    }
+
+    bool containsKey(const Key& key) const {
         return take(key);
     }
 
-    node_type* lower_bound(const Key& key) {
+    node_type* lower_bound(const Key& key) const {
         node_type* node = root;
 
         while (node) {
-            if ((key <= node->key && !node->left) || (key > node->key && !node->right)) {
+            if ((key <= node->key() && !node->left) || (key > node->key() && !node->right)) {
                 while (node) {
-                    if (key <= node->key) return node;
+                    if (key <= node->key()) return node;
                     node = node->parent;
                 }
                 return nullptr;
             }
-            if (key <= node->key) {
+            if (key <= node->key()) {
                 node = node->left;
             }
             else {
@@ -203,18 +212,18 @@ public:
         return node;
     }
 
-    node_type* upper_bound(const Key& key) {
+    node_type* upper_bound(const Key& key) const {
         node_type* node = root;
 
         while (node) {
-            if ((key < node->key && !node->left) || (key >= node->key && !node->right)) {
+            if ((key < node->key() && !node->left) || (key >= node->key() && !node->right)) {
                 while (node) {
-                    if (key < node->key) return node;
+                    if (key < node->key()) return node;
                     node = node->parent;
                 }
                 return nullptr;
             }
-            if (key < node->key) {
+            if (key < node->key()) {
                 node = node->left;
             }
             else {
@@ -224,18 +233,18 @@ public:
         return node;
     }
 
-    node_type* reverse_upper_bound(const Key& key) {
+    node_type* reverse_upper_bound(const Key& key) const {
         node_type* node = root;
 
         while (node) {
-            if ((key <= node->key && !node->left) || (key > node->key && !node->right)) {
+            if ((key <= node->key() && !node->left) || (key > node->key() && !node->right)) {
                 while (node) {
-                    if (key > node->key) return node;
+                    if (key > node->key()) return node;
                     node = node->parent;
                 }
                 return nullptr;
             }
-            if (key <= node->key) {
+            if (key <= node->key()) {
                 node = node->left;
             }
             else {
@@ -245,11 +254,11 @@ public:
         return node;
     }
 
-    Key next(const Key& key) {
+    const Key& next(const Key& key) const {
         return upper_bound(key)->key;
     }
 
-    Key prev(const Key& key) {
+    const Key& prev(const Key& key) const {
         return reverse_upper_bound(key)->key;
     }
 
@@ -285,11 +294,15 @@ public:
         return true;
     }
 
-    Value operator[](const Key& key) {
-        return get(key);
+    const Value& operator[](const Key& key) const {
+        return at(key);
     }
 
-    int height() {
+    Value& operator[](const Key& key) {
+        return at(key);
+    }
+
+    int height() const {
         return root ? root->height + 1 : 0;
     }
 
@@ -298,7 +311,7 @@ public:
     }
 
 private:
-    node_type* valance(node_type* node) {
+    node_type* valance(node_type* node) const {
         assert(node != nullptr);
 
         node_type* root = nullptr;
@@ -330,16 +343,16 @@ private:
         return root;
     }
 
-    node_type* take(Key key, node_type** parent = nullptr) {
+    node_type* take(Key key, node_type** parent = nullptr) const {
         node_type* node = root;
 
         while (node) {
-            if (node->key == key)
+            if (node->key() == key)
                 break;
             if (parent) {
                 *parent = node;
             }
-            if (key < node->key)
+            if (key < node->key())
                 node = node->left;
             else
                 node = node->right;
@@ -566,70 +579,70 @@ int main()
 
 
     // test upper bound
-    assert(tree.upper_bound(1)->key == 10);
-    assert(tree.upper_bound(10)->key == 20);
-    assert(tree.upper_bound(11)->key == 20);
-    assert(tree.upper_bound(20)->key == 30);
-    assert(tree.upper_bound(21)->key == 30);
-    assert(tree.upper_bound(30)->key == 40);
-    assert(tree.upper_bound(31)->key == 40);
-    assert(tree.upper_bound(40)->key == 50);
-    assert(tree.upper_bound(41)->key == 50);
-    assert(tree.upper_bound(50)->key == 60);
-    assert(tree.upper_bound(51)->key == 60);
-    assert(tree.upper_bound(60)->key == 70);
-    assert(tree.upper_bound(61)->key == 70);
-    assert(tree.upper_bound(70)->key == 80);
-    assert(tree.upper_bound(71)->key == 80);
-    assert(tree.upper_bound(80)->key == 90);
-    assert(tree.upper_bound(81)->key == 90);
-    assert(tree.upper_bound(90)->key == 100);
-    assert(tree.upper_bound(91)->key == 100);
+    assert(tree.upper_bound(1)->key() == 10);
+    assert(tree.upper_bound(10)->key() == 20);
+    assert(tree.upper_bound(11)->key() == 20);
+    assert(tree.upper_bound(20)->key() == 30);
+    assert(tree.upper_bound(21)->key() == 30);
+    assert(tree.upper_bound(30)->key() == 40);
+    assert(tree.upper_bound(31)->key() == 40);
+    assert(tree.upper_bound(40)->key() == 50);
+    assert(tree.upper_bound(41)->key() == 50);
+    assert(tree.upper_bound(50)->key() == 60);
+    assert(tree.upper_bound(51)->key() == 60);
+    assert(tree.upper_bound(60)->key() == 70);
+    assert(tree.upper_bound(61)->key() == 70);
+    assert(tree.upper_bound(70)->key() == 80);
+    assert(tree.upper_bound(71)->key() == 80);
+    assert(tree.upper_bound(80)->key() == 90);
+    assert(tree.upper_bound(81)->key() == 90);
+    assert(tree.upper_bound(90)->key() == 100);
+    assert(tree.upper_bound(91)->key() == 100);
     assert(tree.upper_bound(100) == nullptr);
     assert(tree.upper_bound(101) == nullptr);
 
     // test reverse upper bound
     assert(tree.reverse_upper_bound(10) == nullptr);
-    assert(tree.reverse_upper_bound(11)->key == 10);
-    assert(tree.reverse_upper_bound(20)->key == 10);
-    assert(tree.reverse_upper_bound(21)->key == 20);
-    assert(tree.reverse_upper_bound(30)->key == 20);
-    assert(tree.reverse_upper_bound(31)->key == 30);
-    assert(tree.reverse_upper_bound(40)->key == 30);
-    assert(tree.reverse_upper_bound(41)->key == 40);
-    assert(tree.reverse_upper_bound(50)->key == 40);
-    assert(tree.reverse_upper_bound(51)->key == 50);
-    assert(tree.reverse_upper_bound(60)->key == 50);
-    assert(tree.reverse_upper_bound(61)->key == 60);
-    assert(tree.reverse_upper_bound(70)->key == 60);
-    assert(tree.reverse_upper_bound(71)->key == 70);
-    assert(tree.reverse_upper_bound(80)->key == 70);
-    assert(tree.reverse_upper_bound(81)->key == 80);
-    assert(tree.reverse_upper_bound(90)->key == 80);
-    assert(tree.reverse_upper_bound(91)->key == 90);
-    assert(tree.reverse_upper_bound(100)->key == 90);
-    assert(tree.reverse_upper_bound(101)->key == 100);
+    assert(tree.reverse_upper_bound(11)->key() == 10);
+    assert(tree.reverse_upper_bound(20)->key() == 10);
+    assert(tree.reverse_upper_bound(21)->key() == 20);
+    assert(tree.reverse_upper_bound(30)->key() == 20);
+    assert(tree.reverse_upper_bound(31)->key() == 30);
+    assert(tree.reverse_upper_bound(40)->key() == 30);
+    assert(tree.reverse_upper_bound(41)->key() == 40);
+    assert(tree.reverse_upper_bound(50)->key() == 40);
+    assert(tree.reverse_upper_bound(51)->key() == 50);
+    assert(tree.reverse_upper_bound(60)->key() == 50);
+    assert(tree.reverse_upper_bound(61)->key() == 60);
+    assert(tree.reverse_upper_bound(70)->key() == 60);
+    assert(tree.reverse_upper_bound(71)->key() == 70);
+    assert(tree.reverse_upper_bound(80)->key() == 70);
+    assert(tree.reverse_upper_bound(81)->key() == 80);
+    assert(tree.reverse_upper_bound(90)->key() == 80);
+    assert(tree.reverse_upper_bound(91)->key() == 90);
+    assert(tree.reverse_upper_bound(100)->key() == 90);
+    assert(tree.reverse_upper_bound(101)->key() == 100);
 
     // test lower bound
-    assert(tree.lower_bound(1)->key == 10);
-    assert(tree.lower_bound(10)->key == 10);
-    assert(tree.lower_bound(11)->key == 20);
-    assert(tree.lower_bound(20)->key == 20);
-    assert(tree.lower_bound(21)->key == 30);
-    assert(tree.lower_bound(30)->key == 30);
-    assert(tree.lower_bound(31)->key == 40);
-    assert(tree.lower_bound(40)->key == 40);
-    assert(tree.lower_bound(41)->key == 50);
-    assert(tree.lower_bound(50)->key == 50);
-    assert(tree.lower_bound(51)->key == 60);
-    assert(tree.lower_bound(60)->key == 60);
-    assert(tree.lower_bound(61)->key == 70);
-    assert(tree.lower_bound(70)->key == 70);
-    assert(tree.lower_bound(71)->key == 80);
-    assert(tree.lower_bound(80)->key == 80);
-    assert(tree.lower_bound(81)->key == 90);
-    assert(tree.lower_bound(90)->key == 90);
-    assert(tree.lower_bound(91)->key == 100);
-    assert(tree.lower_bound(100)->key == 100);
+    assert(tree.lower_bound(1)->key() == 10);
+    assert(tree.lower_bound(10)->key() == 10);
+    assert(tree.lower_bound(11)->key() == 20);
+    assert(tree.lower_bound(20)->key() == 20);
+    assert(tree.lower_bound(21)->key() == 30);
+    assert(tree.lower_bound(30)->key() == 30);
+    assert(tree.lower_bound(31)->key() == 40);
+    assert(tree.lower_bound(40)->key() == 40);
+    assert(tree.lower_bound(41)->key() == 50);
+    assert(tree.lower_bound(50)->key() == 50);
+    assert(tree.lower_bound(51)->key() == 60);
+    assert(tree.lower_bound(60)->key() == 60);
+    assert(tree.lower_bound(61)->key() == 70);
+    assert(tree.lower_bound(70)->key() == 70);
+    assert(tree.lower_bound(71)->key() == 80);
+    assert(tree.lower_bound(80)->key() == 80);
+    assert(tree.lower_bound(81)->key() == 90);
+    assert(tree.lower_bound(90)->key() == 90);
+    assert(tree.lower_bound(91)->key() == 100);
+    assert(tree.lower_bound(100)->key() == 100);
     assert(tree.lower_bound(101) == nullptr);
 }
